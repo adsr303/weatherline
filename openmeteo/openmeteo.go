@@ -92,7 +92,7 @@ func (e *WeatherError) Error() string {
 
 func GetCurrentWeather(latitude, longitude float64) (WeatherResponse, error) {
 	// TODO Elevation, timezone
-	requestUrl := fmt.Sprintf("%s?latitude=%.2f&longitude=%.2f&current=%s",
+	requestUrl := fmt.Sprintf("%s?latitude=%f&longitude=%f&current=%s",
 		BaseURL, latitude, longitude, DefaultParams)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
