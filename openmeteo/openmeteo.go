@@ -74,8 +74,8 @@ type WeatherResponse struct {
 	Timezone       string              `json:"timezone"`
 	TimezoneAbbr   string              `json:"timezone_abbreviation"`
 	Elevation      float64             `json:"elevation"`
-	CurrentWeather CurrentWeather      `json:"current_weather"`
-	Units          CurrentWeatherUnits `json:"hourly_units"`
+	CurrentWeather CurrentWeather      `json:"current"`
+	Units          CurrentWeatherUnits `json:"current_units"`
 }
 
 type ErrorResponse struct {
@@ -91,6 +91,7 @@ func (e *WeatherError) Error() string {
 }
 
 func GetCurrentWeather(latitude, longitude float64) (WeatherResponse, error) {
+	// TODO Elevation, timezone
 	requestUrl := fmt.Sprintf("%s?latitude=%.2f&longitude=%.2f&current=%s",
 		BaseURL, latitude, longitude, DefaultParams)
 	resp, err := http.Get(requestUrl)
