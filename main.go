@@ -10,18 +10,18 @@ import (
 )
 
 func main() {
-	var cli cli.CLI
-	ctx := kong.Parse(&cli)
+	var cliArgs cli.CLI
+	ctx := kong.Parse(&cliArgs)
 	var geo ipapi.Geolocation
 	switch ctx.Command() {
-	case "here":
+	case cli.HereCommand:
 		var err error // prevent shadowing of geo
 		geo, err = ipapi.GetGeolocation()
 		if err != nil {
 			panic(err)
 		}
-	case "at <latitude> <longitude>":
-		geo.Lat, geo.Lon = cli.At.Latitude, cli.At.Longitude
+	case cli.AtCommand:
+		geo.Lat, geo.Lon = cliArgs.At.Latitude, cliArgs.At.Longitude
 	}
 	r, err := openmeteo.GetCurrentWeather(geo.Lat, geo.Lon)
 	if err != nil {

@@ -19,3 +19,6 @@ type CLI struct {
 		Longitude float64 `arg:"" help:"Longitude"`
 	} `cmd:"" help:"Get weather at specified coordinates"`
 }
+
+const HereCommand = "here"
+const AtCommand = "at <latitude> <longitude>"
