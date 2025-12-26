@@ -3,23 +3,15 @@ package main
 import (
 	"fmt"
 
+	"github.com/adsr303/weatherline/cli"
 	"github.com/adsr303/weatherline/ipapi"
 	"github.com/adsr303/weatherline/openmeteo"
 	"github.com/alecthomas/kong"
 )
 
-var CLI struct {
-	Here struct {
-	} `cmd:"" help:"Get weather at current location" default:"1"`
-	At struct {
-		Latitude  float64 `arg:"" help:"Latitude"`
-		Longitude float64 `arg:"" help:"Longitude"`
-	} `cmd:"" help:"Get weather at specified coordinates"`
-}
-
 func main() {
-	ctx := kong.Parse(&CLI)
-	fmt.Printf("%+v %+v\n", CLI, ctx.Command())
+	var cli cli.CLI
+	ctx := kong.Parse(&cli)
 	var geo ipapi.Geolocation
 	switch ctx.Command() {
 	case "here":
@@ -29,12 +21,11 @@ func main() {
 			panic(err)
 		}
 	case "at <latitude> <longitude>":
-		geo.Lat, geo.Lon = CLI.At.Latitude, CLI.At.Longitude
+		geo.Lat, geo.Lon = cli.At.Latitude, cli.At.Longitude
 	}
-	fmt.Printf("%+v\n", geo)
 	r, err := openmeteo.GetCurrentWeather(geo.Lat, geo.Lon)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%+v\n", r)
+	fmt.Printf("%.1f%s\n", r.CurrentWeather.Temperature, r.Units.Temperature)
 }
