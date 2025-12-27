@@ -23,9 +23,11 @@ func main() {
 	case cli.AtCommand:
 		geo.Lat, geo.Lon = cliArgs.At.Latitude, cliArgs.At.Longitude
 	}
-	r, err := openmeteo.GetCurrentWeather(geo.Lat, geo.Lon)
+	r, err := openmeteo.GetCurrentWeather(geo.Lat, geo.Lon, &cliArgs.Options, geo.Country)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%.1f%s\n", r.CurrentWeather.Temperature, r.Units.Temperature)
+	fmt.Printf("%.1f%s %.1f%s\n",
+		r.CurrentWeather.Temperature, r.Units.Temperature,
+		r.CurrentWeather.ApparentTemperature, r.Units.ApparentTemperature)
 }

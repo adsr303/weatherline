@@ -6,6 +6,9 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/adsr303/weatherline/cli"
+	"github.com/adsr303/weatherline/geography"
 )
 
 const BaseURL = "https://api.open-meteo.com/v1/forecast"
@@ -90,10 +93,15 @@ func (e *WeatherError) Error() string {
 	return e.Reason
 }
 
-func GetCurrentWeather(latitude, longitude float64) (WeatherResponse, error) {
+func GetCurrentWeather(latitude, longitude float64, options *cli.Options, country string) (WeatherResponse, error) {
 	// TODO Elevation, timezone
-	requestUrl := fmt.Sprintf("%s?latitude=%f&longitude=%f&current=%s",
-		BaseURL, latitude, longitude, DefaultParams)
+	units := fmt.Sprintf(
+		"temperature_unit=%s&wind_speed_unit=%s&precipitation_unit=%s",
+		getTemperatureUnit(options, country), getWindSpeedUnit(options, country),
+		getPrecipitationUnit(options, country))
+	requestUrl := fmt.Sprintf(
+		"%s?latitude=%f&longitude=%f&current=%s&%s",
+		BaseURL, latitude, longitude, DefaultParams, units)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return WeatherResponse{}, err
@@ -115,4 +123,44 @@ func GetCurrentWeather(latitude, longitude float64) (WeatherResponse, error) {
 		return WeatherResponse{}, err
 	}
 	return weatherResp, nil
+}
+
+func getTemperatureUnit(options *cli.Options, country string) string {
+	switch options.TempUnits {
+	case "local":
+		if geography.UsesFahrenheit(country) {
+			return "fahrenheit"
+		}
+		return "celsius"
+	default:
+		return options.TempUnits
+	}
+}
+
+func getWindSpeedUnit(options *cli.Options, country string) string {
+	switch options.Units {
+	case "metric":
+		return "kmh"
+	case "imperial":
+		return "mph"
+	default:
+		if geography.UsesImperial(country) {
+			return "mph"
+		}
+		return "kmh"
+	}
+}
+
+func getPrecipitationUnit(options *cli.Options, country string) string {
+	switch options.Units {
+	case "metric":
+		return "mm"
+	case "imperial":
+		return "inch"
+	default:
+		if geography.UsesImperial(country) {
+			return "inch"
+		}
+		return "mm"
+	}
 }

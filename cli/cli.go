@@ -1,7 +1,8 @@
 package cli
 
 type Options struct {
-	Units     string `help:"Units: metric or imperial" short:"u" default:"metric" enum:"metric,imperial"`
+	Units     string `help:"Units: metric or imperial" short:"u" default:"local" enum:"local,metric,imperial"`
+	TempUnits string `help:"Temperature units: celsius or fahrenheit" short:"t" default:"local" enum:"local,celsius,fahrenheit"`
 	FeelsLike bool   `help:"Show 'feels like' temperature" short:"l" default:"false"`
 	UVIndex   bool   `help:"Show UV index" short:"i" default:"false"`
 	Humidity  bool   `help:"Show humidity" short:"m" default:"false"`
