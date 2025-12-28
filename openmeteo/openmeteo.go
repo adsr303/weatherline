@@ -11,9 +11,9 @@ import (
 	"github.com/adsr303/weatherline/geography"
 )
 
-const BaseURL = "https://api.open-meteo.com/v1/forecast"
+const baseURL = "https://api.open-meteo.com/v1/forecast"
 
-var CurrentWeatherParams = []string{
+var currentWeatherParams = []string{
 	"temperature_2m",
 	"relative_humidity_2m",
 	"apparent_temperature",
@@ -31,7 +31,7 @@ var CurrentWeatherParams = []string{
 	"surface_pressure",
 }
 
-var DefaultParams string = strings.Join(CurrentWeatherParams, ",")
+var defaultParams string = strings.Join(currentWeatherParams, ",")
 
 type CurrentWeather struct {
 	Temperature     float64 `json:"temperature_2m"`
@@ -49,6 +49,14 @@ type CurrentWeather struct {
 	CloudCover      float64 `json:"cloud_cover"`
 	Pressure        float64 `json:"pressure_msl"`
 	SurfacePressure float64 `json:"surface_pressure"`
+}
+
+var compassDirections = []string{"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"}
+
+// CompassWindDirection returns the wind direction as a compass direction string (e.g., "N", "NE", "E", etc.).
+func (c *CurrentWeather) CompassWindDirection() string {
+	index := int((c.WindDirection+11.25)/22.5) % 16
+	return compassDirections[index]
 }
 
 type CurrentWeatherUnits struct {
@@ -109,7 +117,7 @@ func GetCurrentWeather(latitude, longitude float64, options *cli.Options, countr
 		getPrecipitationUnit(options, countryCode))
 	requestUrl := fmt.Sprintf(
 		"%s?latitude=%f&longitude=%f&current=%s&daily=sunrise,sunset,uv_index_max&%s",
-		BaseURL, latitude, longitude, DefaultParams, units)
+		baseURL, latitude, longitude, defaultParams, units)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return WeatherResponse{}, err

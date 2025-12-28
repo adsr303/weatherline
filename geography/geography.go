@@ -29,3 +29,16 @@ func UsesImperial(countryCode string) bool {
 	_, exists := imperialCountries[countryCode]
 	return exists
 }
+
+var ampmCountries = map[string]bool{
+	"US": true, // United States
+	"PH": true, // Philippines
+	"CA": true, // Canada (partially)
+	"GB": true, // United Kingdom (partially)
+}
+
+// UsesAMPM returns true if the given country code commonly uses the AM/PM time format.
+func UsesAMPM(countryCode string) bool {
+	_, exists := ampmCountries[countryCode]
+	return exists
+}

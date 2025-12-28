@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
+	"time"
 
 	"github.com/adsr303/weatherline/cli"
+	"github.com/adsr303/weatherline/geography"
 	"github.com/adsr303/weatherline/ipapi"
 	"github.com/adsr303/weatherline/openmeteo"
 	"github.com/alecthomas/kong"
@@ -28,28 +31,45 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// TODO "in City"
-	parts := []string{fmt.Sprintf("Weather: %.0f%s", r.CurrentWeather.Temperature, r.Units.Temperature)}
+	// TODO Handle no city case
+	parts := []string{fmt.Sprintf("Weather in %s: %d%s", geo.City, toWholeDegrees(r.CurrentWeather.Temperature), r.Units.Temperature)}
 	if cliArgs.FeelsLike {
-		parts = append(parts, fmt.Sprintf("(Feels like %.0f%s)", r.CurrentWeather.FeelsLike, r.Units.FeelsLike))
+		parts = append(parts, fmt.Sprintf("Feels like %d%s", toWholeDegrees(r.CurrentWeather.FeelsLike), r.Units.FeelsLike))
 	}
 	if cliArgs.Wind {
-		// TODO direction as text
-		parts = append(parts, fmt.Sprintf("Wind: %.0f %s %f", r.CurrentWeather.WindSpeed, r.Units.WindSpeed, r.CurrentWeather.WindDirection))
+		parts = append(parts, fmt.Sprintf("Wind: %.f %s %s", r.CurrentWeather.WindSpeed, r.Units.WindSpeed, r.CurrentWeather.CompassWindDirection()))
 	}
 	if cliArgs.Humidity {
-		parts = append(parts, fmt.Sprintf("Humidity: %.0f%s", r.CurrentWeather.Humidity, r.Units.Humidity))
+		parts = append(parts, fmt.Sprintf("Humidity: %.f%s", r.CurrentWeather.Humidity, r.Units.Humidity))
 	}
 	if cliArgs.Pressure {
-		parts = append(parts, fmt.Sprintf("Pressure: %.0f %s", r.CurrentWeather.Pressure, r.Units.Pressure))
+		parts = append(parts, fmt.Sprintf("Pressure: %.f %s", r.CurrentWeather.Pressure, r.Units.Pressure))
 	}
 	if cliArgs.UVIndex {
 		parts = append(parts, fmt.Sprintf("Max UVI: %.1f", r.Daily.UVIndexMax[0]))
 	}
 	if cliArgs.Daylight {
-		// TODO format
-		parts = append(parts, fmt.Sprintf("Sunrise: %s", r.Daily.Sunrise[0]))
-		parts = append(parts, fmt.Sprintf("Sunset: %s", r.Daily.Sunset[0]))
+		parts = append(parts, fmt.Sprintf("Sunrise: %s", toLocalHour(r.Daily.Sunrise[0], geo.CountryCode)))
+		parts = append(parts, fmt.Sprintf("Sunset: %s", toLocalHour(r.Daily.Sunset[0], geo.CountryCode)))
 	}
 	fmt.Println(strings.Join(parts, " - "))
+}
+
+// toWholeDegrees converts a float temperature to an integer by rounding to the nearest whole degree.
+// This prevents displaying negative zero (e.g., -0.4 -> 0).
+func toWholeDegrees(temp float64) int {
+	return int(math.Round(temp))
+}
+
+// toLocalHour converts a date-time string in the format "2006-01-02T15:04" to a time string
+// in either 24-hour format or AM/PM format based on the country's conventions.
+func toLocalHour(dateTime, countryCode string) string {
+	t, err := time.Parse("2006-01-02T15:04", dateTime)
+	if err != nil {
+		return dateTime
+	}
+	if geography.UsesAMPM(countryCode) {
+		return t.Format(time.Kitchen)
+	}
+	return t.Format("15:04")
 }
