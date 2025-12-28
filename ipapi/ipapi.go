@@ -9,20 +9,21 @@ import (
 )
 
 type Geolocation struct {
-	Status     string // "success" or "failure"
-	Message    string // Non-empty if Status=="failure"
-	Country    string
-	RegionName string
-	City       string
-	Lat        float64
-	Lon        float64
-	Timezone   string
-	Offset     int16 // Timezone UTC offset in seconds
+	Status      string // "success" or "failure"
+	Message     string // Non-empty if Status=="failure"
+	Country     string
+	CountryCode string
+	RegionName  string
+	City        string
+	Lat         float64
+	Lon         float64
+	Timezone    string
+	Offset      int16 // Timezone UTC offset in seconds
 }
 
 func GetGeolocation() (Geolocation, error) {
 	var geo Geolocation
-	res, err := http.Get("http://ip-api.com/json/?fields=status,message,country,regionName,city,lat,lon,timezone,offset,isp,org,as,query")
+	res, err := http.Get("http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,lat,lon,timezone,offset")
 	if err != nil {
 		return geo, fmt.Errorf("retrieving geolocation: %w", err)
 	}

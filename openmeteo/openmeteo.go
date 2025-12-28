@@ -93,12 +93,13 @@ func (e *WeatherError) Error() string {
 	return e.Reason
 }
 
-func GetCurrentWeather(latitude, longitude float64, options *cli.Options, country string) (WeatherResponse, error) {
+func GetCurrentWeather(latitude, longitude float64, options *cli.Options, countryCode string) (WeatherResponse, error) {
 	// TODO Elevation, timezone
 	units := fmt.Sprintf(
 		"temperature_unit=%s&wind_speed_unit=%s&precipitation_unit=%s",
-		getTemperatureUnit(options, country), getWindSpeedUnit(options, country),
-		getPrecipitationUnit(options, country))
+		getTemperatureUnit(options, countryCode),
+		getWindSpeedUnit(options, countryCode),
+		getPrecipitationUnit(options, countryCode))
 	requestUrl := fmt.Sprintf(
 		"%s?latitude=%f&longitude=%f&current=%s&%s",
 		BaseURL, latitude, longitude, DefaultParams, units)
@@ -125,10 +126,10 @@ func GetCurrentWeather(latitude, longitude float64, options *cli.Options, countr
 	return weatherResp, nil
 }
 
-func getTemperatureUnit(options *cli.Options, country string) string {
+func getTemperatureUnit(options *cli.Options, countryCode string) string {
 	switch options.TempUnits {
 	case "local":
-		if geography.UsesFahrenheit(country) {
+		if geography.UsesFahrenheit(countryCode) {
 			return "fahrenheit"
 		}
 		return "celsius"
@@ -137,28 +138,28 @@ func getTemperatureUnit(options *cli.Options, country string) string {
 	}
 }
 
-func getWindSpeedUnit(options *cli.Options, country string) string {
+func getWindSpeedUnit(options *cli.Options, countryCode string) string {
 	switch options.Units {
 	case "metric":
 		return "kmh"
 	case "imperial":
 		return "mph"
 	default:
-		if geography.UsesImperial(country) {
+		if geography.UsesImperial(countryCode) {
 			return "mph"
 		}
 		return "kmh"
 	}
 }
 
-func getPrecipitationUnit(options *cli.Options, country string) string {
+func getPrecipitationUnit(options *cli.Options, countryCode string) string {
 	switch options.Units {
 	case "metric":
 		return "mm"
 	case "imperial":
 		return "inch"
 	default:
-		if geography.UsesImperial(country) {
+		if geography.UsesImperial(countryCode) {
 			return "inch"
 		}
 		return "mm"
