@@ -34,39 +34,45 @@ var CurrentWeatherParams = []string{
 var DefaultParams string = strings.Join(CurrentWeatherParams, ",")
 
 type CurrentWeather struct {
-	Temperature         float64 `json:"temperature_2m"`
-	RelativeHumidity    float64 `json:"relative_humidity_2m"`
-	ApparentTemperature float64 `json:"apparent_temperature"`
-	IsDay               int     `json:"is_day"`
-	WindSpeed           float64 `json:"wind_speed_10m"`
-	WindDirection       float64 `json:"wind_direction_10m"`
-	WindGusts           float64 `json:"wind_gusts_10m"`
-	Precipitation       float64 `json:"precipitation"`
-	Showers             float64 `json:"showers"`
-	Snowfall            float64 `json:"snowfall"`
-	Rain                float64 `json:"rain"`
-	WeatherCode         int     `json:"weather_code"`
-	CloudCover          float64 `json:"cloud_cover"`
-	PressureMSL         float64 `json:"pressure_msl"`
-	SurfacePressure     float64 `json:"surface_pressure"`
+	Temperature     float64 `json:"temperature_2m"`
+	Humidity        float64 `json:"relative_humidity_2m"`
+	FeelsLike       float64 `json:"apparent_temperature"`
+	IsDay           int     `json:"is_day"`
+	WindSpeed       float64 `json:"wind_speed_10m"`
+	WindDirection   float64 `json:"wind_direction_10m"`
+	WindGusts       float64 `json:"wind_gusts_10m"`
+	Precipitation   float64 `json:"precipitation"`
+	Showers         float64 `json:"showers"`
+	Snowfall        float64 `json:"snowfall"`
+	Rain            float64 `json:"rain"`
+	WeatherCode     int     `json:"weather_code"`
+	CloudCover      float64 `json:"cloud_cover"`
+	Pressure        float64 `json:"pressure_msl"`
+	SurfacePressure float64 `json:"surface_pressure"`
 }
 
 type CurrentWeatherUnits struct {
-	Temperature         string `json:"temperature_2m"`
-	RelativeHumidity    string `json:"relative_humidity_2m"`
-	ApparentTemperature string `json:"apparent_temperature"`
-	IsDay               string `json:"is_day"`
-	WindSpeed           string `json:"wind_speed_10m"`
-	WindDirection       string `json:"wind_direction_10m"`
-	WindGusts           string `json:"wind_gusts_10m"`
-	Precipitation       string `json:"precipitation"`
-	Showers             string `json:"showers"`
-	Snowfall            string `json:"snowfall"`
-	Rain                string `json:"rain"`
-	WeatherCode         string `json:"weather_code"`
-	CloudCover          string `json:"cloud_cover"`
-	PressureMSL         string `json:"pressure_msl"`
-	SurfacePressure     string `json:"surface_pressure"`
+	Temperature     string `json:"temperature_2m"`
+	Humidity        string `json:"relative_humidity_2m"`
+	FeelsLike       string `json:"apparent_temperature"`
+	IsDay           string `json:"is_day"`
+	WindSpeed       string `json:"wind_speed_10m"`
+	WindDirection   string `json:"wind_direction_10m"`
+	WindGusts       string `json:"wind_gusts_10m"`
+	Precipitation   string `json:"precipitation"`
+	Showers         string `json:"showers"`
+	Snowfall        string `json:"snowfall"`
+	Rain            string `json:"rain"`
+	WeatherCode     string `json:"weather_code"`
+	CloudCover      string `json:"cloud_cover"`
+	Pressure        string `json:"pressure_msl"`
+	SurfacePressure string `json:"surface_pressure"`
+}
+
+type DailyWeather struct {
+	Sunrise    []string  `json:"sunrise"`
+	Sunset     []string  `json:"sunset"`
+	UVIndexMax []float64 `json:"uv_index_max"`
 }
 
 type WeatherResponse struct {
@@ -79,6 +85,7 @@ type WeatherResponse struct {
 	Elevation      float64             `json:"elevation"`
 	CurrentWeather CurrentWeather      `json:"current"`
 	Units          CurrentWeatherUnits `json:"current_units"`
+	Daily          DailyWeather        `json:"daily"`
 }
 
 type ErrorResponse struct {
@@ -101,7 +108,7 @@ func GetCurrentWeather(latitude, longitude float64, options *cli.Options, countr
 		getWindSpeedUnit(options, countryCode),
 		getPrecipitationUnit(options, countryCode))
 	requestUrl := fmt.Sprintf(
-		"%s?latitude=%f&longitude=%f&current=%s&%s",
+		"%s?latitude=%f&longitude=%f&current=%s&daily=sunrise,sunset,uv_index_max&%s",
 		BaseURL, latitude, longitude, DefaultParams, units)
 	resp, err := http.Get(requestUrl)
 	if err != nil {

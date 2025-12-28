@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/adsr303/weatherline/cli"
 	"github.com/adsr303/weatherline/ipapi"
@@ -27,7 +28,28 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%.1f%s %.1f%s\n",
-		r.CurrentWeather.Temperature, r.Units.Temperature,
-		r.CurrentWeather.ApparentTemperature, r.Units.ApparentTemperature)
+	// TODO "in City"
+	parts := []string{fmt.Sprintf("Weather: %.0f%s", r.CurrentWeather.Temperature, r.Units.Temperature)}
+	if cliArgs.FeelsLike {
+		parts = append(parts, fmt.Sprintf("(Feels like %.0f%s)", r.CurrentWeather.FeelsLike, r.Units.FeelsLike))
+	}
+	if cliArgs.Wind {
+		// TODO direction as text
+		parts = append(parts, fmt.Sprintf("Wind: %.0f %s %f", r.CurrentWeather.WindSpeed, r.Units.WindSpeed, r.CurrentWeather.WindDirection))
+	}
+	if cliArgs.Humidity {
+		parts = append(parts, fmt.Sprintf("Humidity: %.0f%s", r.CurrentWeather.Humidity, r.Units.Humidity))
+	}
+	if cliArgs.Pressure {
+		parts = append(parts, fmt.Sprintf("Pressure: %.0f %s", r.CurrentWeather.Pressure, r.Units.Pressure))
+	}
+	if cliArgs.UVIndex {
+		parts = append(parts, fmt.Sprintf("Max UVI: %.1f", r.Daily.UVIndexMax[0]))
+	}
+	if cliArgs.Daylight {
+		// TODO format
+		parts = append(parts, fmt.Sprintf("Sunrise: %s", r.Daily.Sunrise[0]))
+		parts = append(parts, fmt.Sprintf("Sunset: %s", r.Daily.Sunset[0]))
+	}
+	fmt.Println(strings.Join(parts, " - "))
 }
