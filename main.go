@@ -27,21 +27,21 @@ func main() {
 	case cli.AtCommand:
 		geo.Lat, geo.Lon = cliArgs.At.Latitude, cliArgs.At.Longitude
 	}
-	r, err := openmeteo.GetCurrentWeather(geo.Lat, geo.Lon, &cliArgs.Options, geo.CountryCode)
+	r, err := openmeteo.GetCurrentWeather(&geo, &cliArgs.Options)
 	if err != nil {
 		panic(err)
 	}
-	formatOutput(cliArgs, geo, r)
+	formatOutput(&cliArgs, &geo, &r)
 }
 
-func formatOutput(cliArgs cli.CLI, geo ipapi.Geolocation, weather openmeteo.WeatherResponse) {
+func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
 	// TODO Handle no city case
 	color.Set(color.BgBlue, color.Bold)
 	fmt.Print(" ")
 	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.Units.Temperature), false)
 	if cliArgs.Symbols {
 		fmt.Print(" ")
-		printSymbol(weather.Current)
+		printSymbol(&weather.Current)
 	}
 	if cliArgs.FeelsLike {
 		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
@@ -98,7 +98,7 @@ var weatherSymbols = map[openmeteo.Weather]weatherSymbol{
 	openmeteo.Thunderstorm: {color.FgHiYellow, "⚡"},
 }
 
-func printSymbol(current openmeteo.CurrentWeather) {
+func printSymbol(current *openmeteo.CurrentWeather) {
 	var ws weatherSymbol
 	switch current.WeatherType() {
 	case openmeteo.Clear:

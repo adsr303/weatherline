@@ -9,6 +9,7 @@ import (
 
 	"github.com/adsr303/weatherline/cli"
 	"github.com/adsr303/weatherline/geography"
+	"github.com/adsr303/weatherline/ipapi"
 )
 
 const baseURL = "https://api.open-meteo.com/v1/forecast"
@@ -148,16 +149,16 @@ func (e *WeatherError) Error() string {
 	return e.Reason
 }
 
-func GetCurrentWeather(latitude, longitude float64, options *cli.Options, countryCode string) (WeatherResponse, error) {
+func GetCurrentWeather(geo *ipapi.Geolocation, options *cli.Options) (WeatherResponse, error) {
 	// TODO Elevation, timezone
 	units := fmt.Sprintf(
 		"temperature_unit=%s&wind_speed_unit=%s&precipitation_unit=%s",
-		getTemperatureUnit(options, countryCode),
-		getWindSpeedUnit(options, countryCode),
-		getPrecipitationUnit(options, countryCode))
+		getTemperatureUnit(options, geo.CountryCode),
+		getWindSpeedUnit(options, geo.CountryCode),
+		getPrecipitationUnit(options, geo.CountryCode))
 	requestUrl := fmt.Sprintf(
-		"%s?latitude=%f&longitude=%f&current=%s&daily=sunrise,sunset,uv_index_max&%s",
-		baseURL, latitude, longitude, defaultParams, units)
+		"%s?latitude=%f&longitude=%f&timezone=%s&current=%s&daily=sunrise,sunset,uv_index_max&%s",
+		baseURL, geo.Lat, geo.Lon, geo.Timezone, defaultParams, units)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return WeatherResponse{}, err
