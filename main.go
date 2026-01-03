@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/adsr303/weatherline/cli"
@@ -11,6 +10,7 @@ import (
 	"github.com/adsr303/weatherline/ipapi"
 	"github.com/adsr303/weatherline/openmeteo"
 	"github.com/alecthomas/kong"
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -31,28 +31,49 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	formatOutput(cliArgs, geo, r)
+}
+
+func formatOutput(cliArgs cli.CLI, geo ipapi.Geolocation, weather openmeteo.WeatherResponse) {
 	// TODO Handle no city case
-	parts := []string{fmt.Sprintf("Weather in %s: %d%s", geo.City, toWholeDegrees(r.CurrentWeather.Temperature), r.Units.Temperature)}
+	color.Set(color.BgBlue, color.Bold)
+	fmt.Print(" ")
+	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.CurrentWeather.Temperature), weather.Units.Temperature), false)
 	if cliArgs.FeelsLike {
-		parts = append(parts, fmt.Sprintf("Feels like %d%s", toWholeDegrees(r.CurrentWeather.FeelsLike), r.Units.FeelsLike))
+		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.CurrentWeather.FeelsLike), weather.Units.FeelsLike), true)
 	}
 	if cliArgs.Wind {
-		parts = append(parts, fmt.Sprintf("Wind: %.f %s %s", r.CurrentWeather.WindSpeed, r.Units.WindSpeed, r.CurrentWeather.CompassWindDirection()))
+		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.CurrentWeather.WindSpeed, weather.Units.WindSpeed, weather.CurrentWeather.CompassWindDirection()), true)
 	}
 	if cliArgs.Humidity {
-		parts = append(parts, fmt.Sprintf("Humidity: %.f%s", r.CurrentWeather.Humidity, r.Units.Humidity))
+		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.CurrentWeather.Humidity, weather.Units.Humidity), true)
 	}
 	if cliArgs.Pressure {
-		parts = append(parts, fmt.Sprintf("Pressure: %.f %s", r.CurrentWeather.Pressure, r.Units.Pressure))
+		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.CurrentWeather.Pressure, weather.Units.Pressure), true)
 	}
 	if cliArgs.UVIndex {
-		parts = append(parts, fmt.Sprintf("Max UVI: %.1f", r.Daily.UVIndexMax[0]))
+		printEntry("Max UVI", fmt.Sprintf("%.1f", weather.Daily.UVIndexMax[0]), true)
 	}
 	if cliArgs.Daylight {
-		parts = append(parts, fmt.Sprintf("Sunrise: %s", toLocalHour(r.Daily.Sunrise[0], geo.CountryCode)))
-		parts = append(parts, fmt.Sprintf("Sunset: %s", toLocalHour(r.Daily.Sunset[0], geo.CountryCode)))
+		printEntry("Sunrise", toLocalHour(weather.Daily.Sunrise[0], geo.CountryCode), true)
+		printEntry("Sunset", toLocalHour(weather.Daily.Sunset[0], geo.CountryCode), true)
 	}
-	fmt.Println(strings.Join(parts, " - "))
+	fmt.Print(" ")
+	color.Unset()
+	fmt.Println()
+}
+
+func printEntry(label, value string, dash bool) {
+	if dash {
+		color.Set(color.FgBlue)
+		fmt.Print(" - ")
+	}
+	color.Set(color.FgHiCyan)
+	fmt.Print(label)
+	color.Set(color.FgMagenta)
+	fmt.Print(": ")
+	color.Set(color.FgYellow)
+	fmt.Print(value)
 }
 
 // toWholeDegrees converts a float temperature to an integer by rounding to the nearest whole degree.
