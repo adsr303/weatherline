@@ -59,6 +59,46 @@ func (c *CurrentWeather) CompassWindDirection() string {
 	return compassDirections[index]
 }
 
+// IsDaytime returns true if it is currently daytime at the location.
+func (c *CurrentWeather) IsDaytime() bool {
+	return c.IsDay == 1
+}
+
+// Weather represents general weather types.
+type Weather int
+
+// Weather type constants.
+const (
+	Clear Weather = iota
+	Clouds
+	Rain
+	Fog
+	Mist
+	Haze
+	Snow
+	Thunderstorm
+)
+
+// WeatherType returns the general weather type based on the weather code.
+func (c *CurrentWeather) WeatherType() Weather {
+	switch c.WeatherCode {
+	case 0, 1:
+		return Clear
+	case 2, 3:
+		return Clouds
+	case 45, 48:
+		return Fog
+	case 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82:
+		return Rain
+	case 71, 73, 75, 77, 85, 86:
+		return Snow
+	case 95, 96, 99:
+		return Thunderstorm
+	default:
+		return Clear
+	}
+}
+
 type CurrentWeatherUnits struct {
 	Temperature     string `json:"temperature_2m"`
 	Humidity        string `json:"relative_humidity_2m"`

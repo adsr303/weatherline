@@ -9,6 +9,7 @@ type Options struct {
 	Humidity  bool   `help:"Show humidity" short:"m" negatable:"" default:"true"`
 	Pressure  bool   `help:"Show atmospheric pressure" short:"p" negatable:"" default:"true"`
 	Daylight  bool   `help:"Show daylight status" short:"d" negatable:"" default:"false"`
+	Symbols   bool   `help:"Use symbols in output" short:"s" negatable:"" default:"false"`
 }
 
 type CLI struct {

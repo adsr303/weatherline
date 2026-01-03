@@ -39,6 +39,10 @@ func formatOutput(cliArgs cli.CLI, geo ipapi.Geolocation, weather openmeteo.Weat
 	color.Set(color.BgBlue, color.Bold)
 	fmt.Print(" ")
 	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.Units.Temperature), false)
+	if cliArgs.Symbols {
+		fmt.Print(" ")
+		printSymbol(weather.Current)
+	}
 	if cliArgs.FeelsLike {
 		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
 	}
@@ -74,6 +78,40 @@ func printEntry(label, value string, dash bool) {
 	fmt.Print(": ")
 	color.Set(color.FgYellow)
 	fmt.Print(value)
+}
+
+type weatherSymbol struct {
+	color  color.Attribute
+	symbol string
+}
+
+var clearDaySymbol = weatherSymbol{color.FgHiYellow, "☀"}
+var clearNightSymbol = weatherSymbol{color.FgCyan, "☽"}
+
+var weatherSymbols = map[openmeteo.Weather]weatherSymbol{
+	openmeteo.Clouds:       {color.FgHiWhite, "☁"},
+	openmeteo.Rain:         {color.FgHiWhite, "☔"},
+	openmeteo.Fog:          {color.FgHiWhite, "▒"},
+	openmeteo.Mist:         {color.FgBlue, "░"},
+	openmeteo.Haze:         {color.FgYellow, "░"},
+	openmeteo.Snow:         {color.FgHiWhite, "❄"},
+	openmeteo.Thunderstorm: {color.FgHiYellow, "⚡"},
+}
+
+func printSymbol(current openmeteo.CurrentWeather) {
+	var ws weatherSymbol
+	switch current.WeatherType() {
+	case openmeteo.Clear:
+		if current.IsDaytime() {
+			ws = clearDaySymbol
+		} else {
+			ws = clearNightSymbol
+		}
+	default:
+		ws = weatherSymbols[current.WeatherType()]
+	}
+	color.Set(ws.color)
+	fmt.Print(ws.symbol)
 }
 
 // toWholeDegrees converts a float temperature to an integer by rounding to the nearest whole degree.
