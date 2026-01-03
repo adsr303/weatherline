@@ -91,7 +91,7 @@ type WeatherResponse struct {
 	Timezone       string              `json:"timezone"`
 	TimezoneAbbr   string              `json:"timezone_abbreviation"`
 	Elevation      float64             `json:"elevation"`
-	CurrentWeather CurrentWeather      `json:"current"`
+	Current        CurrentWeather      `json:"current"`
 	Units          CurrentWeatherUnits `json:"current_units"`
 	Daily          DailyWeather        `json:"daily"`
 }

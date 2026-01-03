@@ -38,18 +38,18 @@ func formatOutput(cliArgs cli.CLI, geo ipapi.Geolocation, weather openmeteo.Weat
 	// TODO Handle no city case
 	color.Set(color.BgBlue, color.Bold)
 	fmt.Print(" ")
-	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.CurrentWeather.Temperature), weather.Units.Temperature), false)
+	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.Units.Temperature), false)
 	if cliArgs.FeelsLike {
-		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.CurrentWeather.FeelsLike), weather.Units.FeelsLike), true)
+		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
 	}
 	if cliArgs.Wind {
-		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.CurrentWeather.WindSpeed, weather.Units.WindSpeed, weather.CurrentWeather.CompassWindDirection()), true)
+		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.Units.WindSpeed, weather.Current.CompassWindDirection()), true)
 	}
 	if cliArgs.Humidity {
-		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.CurrentWeather.Humidity, weather.Units.Humidity), true)
+		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.Units.Humidity), true)
 	}
 	if cliArgs.Pressure {
-		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.CurrentWeather.Pressure, weather.Units.Pressure), true)
+		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.Units.Pressure), true)
 	}
 	if cliArgs.UVIndex {
 		printEntry("Max UVI", fmt.Sprintf("%.1f", weather.Daily.UVIndexMax[0]), true)
