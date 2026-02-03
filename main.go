@@ -16,51 +16,75 @@ import (
 func main() {
 	var cliArgs cli.CLI
 	ctx := kong.Parse(&cliArgs)
-	var geo ipapi.Geolocation
-	switch ctx.Command() {
-	case cli.HereCommand:
-		var err error // prevent shadowing of geo
-		geo, err = ipapi.GetGeolocation()
-		if err != nil {
-			panic(err)
-		}
-	case cli.AtCommand:
-		geo.Lat, geo.Lon = cliArgs.At.Latitude, cliArgs.At.Longitude
-	}
-	r, err := openmeteo.GetCurrentWeather(&geo, &cliArgs.Options)
+	geo, err := ipapi.GetGeolocation()
 	if err != nil {
 		panic(err)
 	}
-	formatOutput(&cliArgs, &geo, &r)
+	r, err := openmeteo.GetWeather(&geo, &cliArgs.GlobalOptions)
+	if err != nil {
+		panic(err)
+	}
+	switch ctx.Command() {
+	case cli.NowCommand:
+		formatNow(&cliArgs, &geo, &r)
+	case cli.ForecastCommand:
+		formatForecast(&cliArgs, &geo, &r)
+	}
 }
 
-func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
-	// TODO Handle no city case
+func formatNow(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
 	color.Set(color.BgBlue, color.Bold)
 	fmt.Print(" ")
-	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.Units.Temperature), false)
+	printEntry("Weather in "+geo.City,
+		fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.CurrentUnits.Temperature),
+		false)
 	if cliArgs.Symbols {
 		fmt.Print(" ")
 		printSymbol(&weather.Current)
 	}
-	if cliArgs.FeelsLike {
-		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
+	if cliArgs.Now.FeelsLike {
+		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.CurrentUnits.FeelsLike), true)
 	}
-	if cliArgs.Wind {
-		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.Units.WindSpeed, weather.Current.CompassWindDirection()), true)
+	if cliArgs.Now.Wind {
+		printEntry("Wind",
+			fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.CurrentUnits.WindSpeed, weather.Current.CompassWindDirection()),
+			true)
 	}
-	if cliArgs.Humidity {
-		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.Units.Humidity), true)
+	if cliArgs.Now.Humidity {
+		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.CurrentUnits.Humidity), true)
 	}
-	if cliArgs.Pressure {
-		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.Units.Pressure), true)
+	if cliArgs.Now.Pressure {
+		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.CurrentUnits.Pressure), true)
 	}
-	if cliArgs.UVIndex {
+	if cliArgs.Now.UVIndex {
 		printEntry("Max UVI", fmt.Sprintf("%.1f", weather.Daily.UVIndexMax[0]), true)
 	}
-	if cliArgs.Daylight {
+	if cliArgs.Now.Daylight {
 		printEntry("Sunrise", toLocalHour(weather.Daily.Sunrise[0], geo.CountryCode), true)
 		printEntry("Sunset", toLocalHour(weather.Daily.Sunset[0], geo.CountryCode), true)
+	}
+	fmt.Print(" ")
+	color.Unset()
+	fmt.Println()
+}
+
+func formatForecast(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
+	color.Set(color.BgBlue, color.Bold)
+	fmt.Print(" ")
+	printEntry(geo.City+" forecast", "", false) // TODO No ":  - "
+	dash := false
+	for i := range cliArgs.Forecast.Days {
+		printEntry(toLocalDate(weather.Daily.Time[i]),
+			fmt.Sprintf("%d/%d%s",
+				toWholeDegrees(weather.Daily.TempMax[i]),
+				toWholeDegrees(weather.Daily.TempMin[i]),
+				weather.DailyUnits.TempMax),
+			dash)
+		if cliArgs.Symbols {
+			fmt.Print(" ")
+			printDailySymbol(weather.Daily.WeatherType(i))
+		}
+		dash = true
 	}
 	fmt.Print(" ")
 	color.Unset()
@@ -114,6 +138,18 @@ func printSymbol(current *openmeteo.CurrentWeather) {
 	fmt.Print(ws.symbol)
 }
 
+func printDailySymbol(weatherType openmeteo.Weather) {
+	var ws weatherSymbol
+	switch weatherType {
+	case openmeteo.Clear:
+		ws = clearDaySymbol
+	default:
+		ws = weatherSymbols[weatherType]
+	}
+	color.Set(ws.color)
+	fmt.Print(ws.symbol)
+}
+
 // toWholeDegrees converts a float temperature to an integer by rounding to the nearest whole degree.
 // This prevents displaying negative zero (e.g., -0.4 -> 0).
 func toWholeDegrees(temp float64) int {
@@ -131,4 +167,13 @@ func toLocalHour(dateTime, countryCode string) string {
 		return t.Format(time.Kitchen)
 	}
 	return t.Format("15:04")
+}
+
+// toLocalDate converts a date string in the format "2006-01-02" to a more human-readable format "Mon 02 Jan".
+func toLocalDate(date string) string {
+	t, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return date
+	}
+	return t.Format("Mon 02 Jan")
 }
