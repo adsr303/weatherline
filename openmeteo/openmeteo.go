@@ -149,7 +149,7 @@ func (e *WeatherError) Error() string {
 	return e.Reason
 }
 
-func GetCurrentWeather(geo *ipapi.Geolocation, options *cli.Options) (WeatherResponse, error) {
+func GetCurrentWeather(geo *ipapi.Geolocation, options *cli.GlobalOptions) (WeatherResponse, error) {
 	// TODO Elevation, timezone
 	units := fmt.Sprintf(
 		"temperature_unit=%s&wind_speed_unit=%s&precipitation_unit=%s",
@@ -182,7 +182,7 @@ func GetCurrentWeather(geo *ipapi.Geolocation, options *cli.Options) (WeatherRes
 	return weatherResp, nil
 }
 
-func getTemperatureUnit(options *cli.Options, countryCode string) string {
+func getTemperatureUnit(options *cli.GlobalOptions, countryCode string) string {
 	switch options.TempUnits {
 	case "local":
 		if geography.UsesFahrenheit(countryCode) {
@@ -194,7 +194,7 @@ func getTemperatureUnit(options *cli.Options, countryCode string) string {
 	}
 }
 
-func getWindSpeedUnit(options *cli.Options, countryCode string) string {
+func getWindSpeedUnit(options *cli.GlobalOptions, countryCode string) string {
 	switch options.Units {
 	case "metric":
 		return "kmh"
@@ -208,7 +208,7 @@ func getWindSpeedUnit(options *cli.Options, countryCode string) string {
 	}
 }
 
-func getPrecipitationUnit(options *cli.Options, countryCode string) string {
+func getPrecipitationUnit(options *cli.GlobalOptions, countryCode string) string {
 	switch options.Units {
 	case "metric":
 		return "mm"

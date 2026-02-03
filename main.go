@@ -16,22 +16,20 @@ import (
 func main() {
 	var cliArgs cli.CLI
 	ctx := kong.Parse(&cliArgs)
-	var geo ipapi.Geolocation
-	switch ctx.Command() {
-	case cli.HereCommand:
-		var err error // prevent shadowing of geo
-		geo, err = ipapi.GetGeolocation()
-		if err != nil {
-			panic(err)
-		}
-	case cli.AtCommand:
-		geo.Lat, geo.Lon = cliArgs.At.Latitude, cliArgs.At.Longitude
-	}
-	r, err := openmeteo.GetCurrentWeather(&geo, &cliArgs.Options)
+	geo, err := ipapi.GetGeolocation()
 	if err != nil {
 		panic(err)
 	}
-	formatOutput(&cliArgs, &geo, &r)
+	switch ctx.Command() {
+	case cli.NowCommand:
+		r, err := openmeteo.GetCurrentWeather(&geo, &cliArgs.GlobalOptions)
+		if err != nil {
+			panic(err)
+		}
+		formatOutput(&cliArgs, &geo, &r)
+	case cli.ForecastCommand:
+		// TODO Forecast command
+	}
 }
 
 func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
@@ -43,22 +41,22 @@ func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.W
 		fmt.Print(" ")
 		printSymbol(&weather.Current)
 	}
-	if cliArgs.FeelsLike {
+	if cliArgs.Now.FeelsLike {
 		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
 	}
-	if cliArgs.Wind {
+	if cliArgs.Now.Wind {
 		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.Units.WindSpeed, weather.Current.CompassWindDirection()), true)
 	}
-	if cliArgs.Humidity {
+	if cliArgs.Now.Humidity {
 		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.Units.Humidity), true)
 	}
-	if cliArgs.Pressure {
+	if cliArgs.Now.Pressure {
 		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.Units.Pressure), true)
 	}
-	if cliArgs.UVIndex {
+	if cliArgs.Now.UVIndex {
 		printEntry("Max UVI", fmt.Sprintf("%.1f", weather.Daily.UVIndexMax[0]), true)
 	}
-	if cliArgs.Daylight {
+	if cliArgs.Now.Daylight {
 		printEntry("Sunrise", toLocalHour(weather.Daily.Sunrise[0], geo.CountryCode), true)
 		printEntry("Sunset", toLocalHour(weather.Daily.Sunset[0], geo.CountryCode), true)
 	}
