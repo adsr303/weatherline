@@ -17,7 +17,7 @@ type CLI struct {
 		Daylight  bool `help:"Show daylight status" short:"d" negatable:"" default:"false"`
 	} `cmd:"" help:"Get current weather at current location" default:"1"`
 	Forecast struct {
-		Days int `help:"Number of days to forecast (1-7)" short:"n" default:"3" enum:"1,2,3,4,5,6,7"`
+		Days int `help:"Number of days to forecast (1-7)" short:"n" default:"5" enum:"1,2,3,4,5,6,7"`
 	} `cmd:"" help:"Get weather forecast at current location"`
 }
 

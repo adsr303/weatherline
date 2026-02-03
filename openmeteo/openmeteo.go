@@ -12,6 +12,40 @@ import (
 	"github.com/adsr303/weatherline/ipapi"
 )
 
+// Weather represents general weather types.
+type Weather int
+
+// Weather type constants.
+const (
+	Clear Weather = iota
+	Clouds
+	Rain
+	Fog
+	Mist
+	Haze
+	Snow
+	Thunderstorm
+)
+
+func weatherType(weatherCode int) Weather {
+	switch weatherCode {
+	case 0, 1:
+		return Clear
+	case 2, 3:
+		return Clouds
+	case 45, 48:
+		return Fog
+	case 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82:
+		return Rain
+	case 71, 73, 75, 77, 85, 86:
+		return Snow
+	case 95, 96, 99:
+		return Thunderstorm
+	default:
+		return Clear
+	}
+}
+
 const baseURL = "https://api.open-meteo.com/v1/forecast"
 
 var currentWeatherParams = []string{
@@ -32,7 +66,7 @@ var currentWeatherParams = []string{
 	"surface_pressure",
 }
 
-var defaultParams string = strings.Join(currentWeatherParams, ",")
+var defaultCurrentParams string = strings.Join(currentWeatherParams, ",")
 
 type CurrentWeather struct {
 	Temperature     float64 `json:"temperature_2m"`
@@ -65,39 +99,9 @@ func (c *CurrentWeather) IsDaytime() bool {
 	return c.IsDay == 1
 }
 
-// Weather represents general weather types.
-type Weather int
-
-// Weather type constants.
-const (
-	Clear Weather = iota
-	Clouds
-	Rain
-	Fog
-	Mist
-	Haze
-	Snow
-	Thunderstorm
-)
-
 // WeatherType returns the general weather type based on the weather code.
 func (c *CurrentWeather) WeatherType() Weather {
-	switch c.WeatherCode {
-	case 0, 1:
-		return Clear
-	case 2, 3:
-		return Clouds
-	case 45, 48:
-		return Fog
-	case 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82:
-		return Rain
-	case 71, 73, 75, 77, 85, 86:
-		return Snow
-	case 95, 96, 99:
-		return Thunderstorm
-	default:
-		return Clear
-	}
+	return weatherType(c.WeatherCode)
 }
 
 type CurrentWeatherUnits struct {
@@ -118,10 +122,40 @@ type CurrentWeatherUnits struct {
 	SurfacePressure string `json:"surface_pressure"`
 }
 
+var dailyWeatherParams = []string{
+	"weather_code",
+	"temperature_2m_min",
+	"temperature_2m_max",
+	"sunrise",
+	"sunset",
+	"uv_index_max",
+}
+
+var defaultDailyParams string = strings.Join(dailyWeatherParams, ",")
+
 type DailyWeather struct {
-	Sunrise    []string  `json:"sunrise"`
-	Sunset     []string  `json:"sunset"`
-	UVIndexMax []float64 `json:"uv_index_max"`
+	Time        []string  `json:"time"`
+	WeatherCode []int     `json:"weather_code"`
+	TempMax     []float64 `json:"temperature_2m_max"`
+	TempMin     []float64 `json:"temperature_2m_min"`
+	Sunrise     []string  `json:"sunrise"`
+	Sunset      []string  `json:"sunset"`
+	UVIndexMax  []float64 `json:"uv_index_max"`
+}
+
+// WeatherType returns the general weather type based on the weather code.
+func (c *DailyWeather) WeatherType(index int) Weather {
+	return weatherType(c.WeatherCode[index])
+}
+
+type DailyWeatherUnits struct {
+	Time        string `json:"time"`
+	WeatherCode string `json:"weather_code"`
+	TempMax     string `json:"temperature_2m_max"`
+	TempMin     string `json:"temperature_2m_min"`
+	Sunrise     string `json:"sunrise"`
+	Sunset      string `json:"sunset"`
+	UVIndexMax  string `json:"uv_index_max"`
 }
 
 type WeatherResponse struct {
@@ -133,8 +167,9 @@ type WeatherResponse struct {
 	TimezoneAbbr   string              `json:"timezone_abbreviation"`
 	Elevation      float64             `json:"elevation"`
 	Current        CurrentWeather      `json:"current"`
-	Units          CurrentWeatherUnits `json:"current_units"`
+	CurrentUnits   CurrentWeatherUnits `json:"current_units"`
 	Daily          DailyWeather        `json:"daily"`
+	DailyUnits     DailyWeatherUnits   `json:"daily_units"`
 }
 
 type ErrorResponse struct {
@@ -149,16 +184,16 @@ func (e *WeatherError) Error() string {
 	return e.Reason
 }
 
-func GetCurrentWeather(geo *ipapi.Geolocation, options *cli.GlobalOptions) (WeatherResponse, error) {
-	// TODO Elevation, timezone
+func GetWeather(geo *ipapi.Geolocation, options *cli.GlobalOptions) (WeatherResponse, error) {
+	// TODO Elevation?, timezone=auto?
 	units := fmt.Sprintf(
 		"temperature_unit=%s&wind_speed_unit=%s&precipitation_unit=%s",
 		getTemperatureUnit(options, geo.CountryCode),
 		getWindSpeedUnit(options, geo.CountryCode),
 		getPrecipitationUnit(options, geo.CountryCode))
 	requestUrl := fmt.Sprintf(
-		"%s?latitude=%f&longitude=%f&timezone=%s&current=%s&daily=sunrise,sunset,uv_index_max&%s",
-		baseURL, geo.Lat, geo.Lon, geo.Timezone, defaultParams, units)
+		"%s?latitude=%f&longitude=%f&timezone=%s&current=%s&daily=%s&%s",
+		baseURL, geo.Lat, geo.Lon, geo.Timezone, defaultCurrentParams, defaultDailyParams, units)
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return WeatherResponse{}, err

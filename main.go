@@ -20,38 +20,41 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	r, err := openmeteo.GetWeather(&geo, &cliArgs.GlobalOptions)
+	if err != nil {
+		panic(err)
+	}
 	switch ctx.Command() {
 	case cli.NowCommand:
-		r, err := openmeteo.GetCurrentWeather(&geo, &cliArgs.GlobalOptions)
-		if err != nil {
-			panic(err)
-		}
-		formatOutput(&cliArgs, &geo, &r)
+		formatNow(&cliArgs, &geo, &r)
 	case cli.ForecastCommand:
-		// TODO Forecast command
+		formatForecast(&cliArgs, &geo, &r)
 	}
 }
 
-func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
-	// TODO Handle no city case
+func formatNow(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
 	color.Set(color.BgBlue, color.Bold)
 	fmt.Print(" ")
-	printEntry("Weather in "+geo.City, fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.Units.Temperature), false)
+	printEntry("Weather in "+geo.City,
+		fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.Temperature), weather.CurrentUnits.Temperature),
+		false)
 	if cliArgs.Symbols {
 		fmt.Print(" ")
 		printSymbol(&weather.Current)
 	}
 	if cliArgs.Now.FeelsLike {
-		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.Units.FeelsLike), true)
+		printEntry("Feels like", fmt.Sprintf("%d%s", toWholeDegrees(weather.Current.FeelsLike), weather.CurrentUnits.FeelsLike), true)
 	}
 	if cliArgs.Now.Wind {
-		printEntry("Wind", fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.Units.WindSpeed, weather.Current.CompassWindDirection()), true)
+		printEntry("Wind",
+			fmt.Sprintf("%.f %s %s", weather.Current.WindSpeed, weather.CurrentUnits.WindSpeed, weather.Current.CompassWindDirection()),
+			true)
 	}
 	if cliArgs.Now.Humidity {
-		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.Units.Humidity), true)
+		printEntry("Humidity", fmt.Sprintf("%.f%s", weather.Current.Humidity, weather.CurrentUnits.Humidity), true)
 	}
 	if cliArgs.Now.Pressure {
-		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.Units.Pressure), true)
+		printEntry("Pressure", fmt.Sprintf("%.f %s", weather.Current.Pressure, weather.CurrentUnits.Pressure), true)
 	}
 	if cliArgs.Now.UVIndex {
 		printEntry("Max UVI", fmt.Sprintf("%.1f", weather.Daily.UVIndexMax[0]), true)
@@ -59,6 +62,29 @@ func formatOutput(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.W
 	if cliArgs.Now.Daylight {
 		printEntry("Sunrise", toLocalHour(weather.Daily.Sunrise[0], geo.CountryCode), true)
 		printEntry("Sunset", toLocalHour(weather.Daily.Sunset[0], geo.CountryCode), true)
+	}
+	fmt.Print(" ")
+	color.Unset()
+	fmt.Println()
+}
+
+func formatForecast(cliArgs *cli.CLI, geo *ipapi.Geolocation, weather *openmeteo.WeatherResponse) {
+	color.Set(color.BgBlue, color.Bold)
+	fmt.Print(" ")
+	printEntry(geo.City+" forecast", "", false) // TODO No ":  - "
+	dash := false
+	for i := range cliArgs.Forecast.Days {
+		printEntry(toLocalDate(weather.Daily.Time[i]),
+			fmt.Sprintf("%d/%d%s",
+				toWholeDegrees(weather.Daily.TempMax[i]),
+				toWholeDegrees(weather.Daily.TempMin[i]),
+				weather.DailyUnits.TempMax),
+			dash)
+		if cliArgs.Symbols {
+			fmt.Print(" ")
+			printDailySymbol(weather.Daily.WeatherType(i))
+		}
+		dash = true
 	}
 	fmt.Print(" ")
 	color.Unset()
@@ -112,6 +138,18 @@ func printSymbol(current *openmeteo.CurrentWeather) {
 	fmt.Print(ws.symbol)
 }
 
+func printDailySymbol(weatherType openmeteo.Weather) {
+	var ws weatherSymbol
+	switch weatherType {
+	case openmeteo.Clear:
+		ws = clearDaySymbol
+	default:
+		ws = weatherSymbols[weatherType]
+	}
+	color.Set(ws.color)
+	fmt.Print(ws.symbol)
+}
+
 // toWholeDegrees converts a float temperature to an integer by rounding to the nearest whole degree.
 // This prevents displaying negative zero (e.g., -0.4 -> 0).
 func toWholeDegrees(temp float64) int {
@@ -129,4 +167,13 @@ func toLocalHour(dateTime, countryCode string) string {
 		return t.Format(time.Kitchen)
 	}
 	return t.Format("15:04")
+}
+
+// toLocalDate converts a date string in the format "2006-01-02" to a more human-readable format "Mon 02 Jan".
+func toLocalDate(date string) string {
+	t, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return date
+	}
+	return t.Format("Mon 02 Jan")
 }
